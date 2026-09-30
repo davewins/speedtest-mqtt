@@ -1,0 +1,61 @@
+# speedtest-mqtt
+
+Runs the official Ookla Speedtest CLI on a schedule and publishes the results
+to MQTT with Home Assistant MQTT discovery, so the sensors appear in Home
+Assistant automatically with no YAML.
+
+## Why this exists
+
+Home Assistant runs on a machine with a 1 Gb/s network interface, so any
+speedtest run from there tops out around 1 Gb/s and under-reports a faster
+connection. This container runs on a separate machine with a **2.5 Gb/s**
+interface, so the test reflects the real internet speed, and it reports the
+result to Home Assistant over MQTT.
+
+## How it works
+
+- Runs `speedtest` (Ookla's official CLI, not the deprecated `speedtest-cli`)
+  every `TEST_INTERVAL` seconds (default hourly).
+- Publishes the result as JSON, retained, to `<prefix>/state`.
+- Publishes HA discovery configs (retained) under `homeassistant/sensor/<prefix>/...`
+  for: Download, Upload, Ping, Jitter, Packet Loss, Server, ISP.
+
+### Availability and Last Will
+
+- `<prefix>/availability` carries `online` / `offline` (retained). HA marks the
+  sensors unavailable when it is `offline`.
+- The MQTT Last Will is `offline` (retained), so the broker publishes it if the
+  container drops off.
+- `online` (retained) is published from paho's `on_connect`, so it is restored
+  on **every** connect and reconnect, not just at startup. Without this, a
+  broker restart or network blip leaves the sensors unavailable until the
+  container is restarted.
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `MQTT_BROKER` | `192.168.1.5` | Broker host (set this) |
+| `MQTT_PORT` | `1883` | Broker port |
+| `MQTT_USER` / `MQTT_PASSWORD` | empty | Broker credentials |
+| `MQTT_TOPIC_PREFIX` | `speedtest` | Topic prefix and HA device id |
+| `TEST_INTERVAL` | `3600` | Seconds between tests |
+
+## Run
+
+```sh
+cp .env.example .env    # edit values; .env is git-ignored
+docker compose up -d --build
+docker logs -f speedtest-mqtt
+```
+
+Run it on the host with the fastest NIC. Each test saturates the link for
+roughly 15-20 seconds, so pick an interval you are happy with.
+
+## Check it
+
+```sh
+mosquitto_sub -h <broker> -u <user> -P <pass> -v -t 'speedtest/#'
+```
+
+You should see `speedtest/availability online` and a JSON `speedtest/state`.
