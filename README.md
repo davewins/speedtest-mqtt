@@ -71,3 +71,19 @@ mosquitto_sub -h <broker> -u <user> -P <pass> -v -t 'speedtest/#'
 ```
 
 You should see `speedtest/availability online` and a JSON `speedtest/state`.
+
+## License and attributions
+
+The code in this repository is MIT licensed (see `LICENSE`). It is not affiliated
+with or endorsed by Ookla.
+
+- **Ookla Speedtest CLI** is (c) Ookla, LLC and is used under the
+  [Speedtest EULA](https://www.speedtest.net/about/eula), which allows personal,
+  non-commercial use only and prohibits redistribution. This repository does not
+  contain the binary: the `Dockerfile` downloads it from Ookla at build time and
+  verifies its checksum. Because the built image contains it, the published image
+  must be kept **private** and not redistributed. Anyone else should build their
+  own image. "Speedtest" and "Ookla" are trademarks of Ookla, LLC.
+- **paho-mqtt** (Eclipse Foundation) is dual-licensed under EPL-2.0 / EDL-1.0 (BSD-style).
+- **Base image** `cgr.dev/chainguard/python` (Chainguard) bundles Python (PSF license)
+  and other open source components under their own licenses.
