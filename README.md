@@ -41,11 +41,23 @@ result to Home Assistant over MQTT.
 | `MQTT_TOPIC_PREFIX` | `speedtest` | Topic prefix and HA device id |
 | `TEST_INTERVAL` | `3600` | Seconds between tests |
 
+## Image
+
+Built by GitHub Actions (`.github/workflows/build.yml`) on every push to `main` and
+weekly, and published to `ghcr.io/davewins/speedtest-mqtt:latest`. The image is
+distroless (Chainguard Python; no shell or package manager) with the statically
+linked Ookla CLI pinned by checksum in the `Dockerfile`, so there are no OS packages
+to carry CVEs. It runs as uid 65532 and is meant to run with a read-only root
+filesystem, a `/tmp` tmpfs and all capabilities dropped (as `docker-compose.yml` does).
+
 ## Run
+
+Portainer: Stacks > Add stack > Repository, this repo, `docker-compose.yml`, with the
+variables from `.env.example` as stack environment variables. Or from a shell:
 
 ```sh
 cp .env.example .env    # edit values; .env is git-ignored
-docker compose up -d --build
+docker compose --env-file .env up -d
 docker logs -f speedtest-mqtt
 ```
 

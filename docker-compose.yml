@@ -1,0 +1,41 @@
+# Portainer stack: Stacks > Add stack > Repository, then set the variables from
+# .env.example under "Environment variables". No secrets live in this file.
+# Image is built by GitHub Actions (see .github/workflows/build.yml); to build locally
+# use `docker build -t ghcr.io/davewins/speedtest-mqtt:latest .`
+name: speedtest-mqtt
+
+services:
+  speedtest-mqtt:
+    image: ${SPEEDTEST_MQTT_IMAGE:-ghcr.io/davewins/speedtest-mqtt:latest}
+    container_name: speedtest-mqtt
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER: ${MQTT_BROKER:?set MQTT_BROKER}
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_USER: ${MQTT_USER:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-speedtest}
+      TEST_INTERVAL: ${TEST_INTERVAL:-3600}
+    # macvlan gives the container its own LAN address so tests use the host's 2.5GbE NIC
+    # directly. Pinned explicitly: a macvlan container can't reach its own host, so a
+    # resolver running on that host (e.g. Pi-hole) must be on a different address.
+    networks:
+      lan:
+        ipv4_address: ${LAN_IP:-192.168.1.160}
+    dns:
+      - ${DNS_SERVER:-192.168.1.7}
+    read_only: true
+    tmpfs: [/tmp]   # HOME for the speedtest CLI's licence/config state
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+
+networks:
+  lan:
+    driver: macvlan
+    driver_opts:
+      parent: ${LAN_PARENT_IFACE:-enp4s0}
+    ipam:
+      config:
+        - subnet: ${LAN_SUBNET:-192.168.1.0/24}
+          gateway: ${LAN_GATEWAY:-192.168.1.1}
+          ip_range: ${LAN_IP:-192.168.1.160}/32
