@@ -52,6 +52,9 @@ filesystem, a `/tmp` tmpfs and all capabilities dropped (as `docker-compose.yml`
 
 ## Run
 
+On hosts where macvlan isn't suitable, use `docker-compose.bridge.yml` instead of
+`docker-compose.yml` (same variables, no `LAN_*`). The image is multi-arch (amd64, arm64).
+
 Portainer: Stacks > Add stack > Repository, this repo, `docker-compose.yml`, with the
 variables from `.env.example` as stack environment variables. Or from a shell:
 

@@ -1,0 +1,22 @@
+# Variant of docker-compose.yml for hosts where macvlan isn't wanted (e.g. a Pi running
+# Pi-hole in host mode, which a macvlan container could not reach). Uses the default
+# bridge network, so tests leave via the host's own NIC. Same variables as .env.example,
+# minus the macvlan/LAN_* ones.
+name: speedtest-mqtt
+
+services:
+  speedtest-mqtt:
+    image: ${SPEEDTEST_MQTT_IMAGE:-ghcr.io/davewins/speedtest-mqtt:latest}
+    container_name: speedtest-mqtt
+    restart: unless-stopped
+    environment:
+      MQTT_BROKER: ${MQTT_BROKER:?set MQTT_BROKER}
+      MQTT_PORT: ${MQTT_PORT:-1883}
+      MQTT_USER: ${MQTT_USER:-}
+      MQTT_PASSWORD: ${MQTT_PASSWORD:-}
+      MQTT_TOPIC_PREFIX: ${MQTT_TOPIC_PREFIX:-speedtest}
+      TEST_INTERVAL: ${TEST_INTERVAL:-3600}
+    read_only: true
+    tmpfs: [/tmp]   # HOME for the speedtest CLI's licence/config state
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]

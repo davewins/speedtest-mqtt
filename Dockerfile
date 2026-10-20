@@ -5,12 +5,20 @@ USER root
 WORKDIR /build
 
 # Official Ookla speedtest CLI: a single statically linked binary, so it needs no
-# distro packages. The tarball is pinned by checksum; bump both together to upgrade.
+# distro packages. Each arch's tarball is pinned by checksum; bump versions and both
+# checksums together to upgrade.
+ARG TARGETARCH
 ARG OOKLA_VERSION=1.2.0
-ARG OOKLA_SHA256=5690596c54ff9bed63fa3732f818a05dbc2db19ad36ed68f21ca5f64d5cfeeb7
-RUN python -c "import hashlib,sys,tarfile,urllib.request as u; \
-v='${OOKLA_VERSION}'; d=u.urlopen(f'https://install.speedtest.net/app/cli/ookla-speedtest-{v}-linux-x86_64.tgz').read(); \
-sys.exit('checksum mismatch') if hashlib.sha256(d).hexdigest()!='${OOKLA_SHA256}' else None; \
+ARG OOKLA_SHA256_AMD64=5690596c54ff9bed63fa3732f818a05dbc2db19ad36ed68f21ca5f64d5cfeeb7
+ARG OOKLA_SHA256_ARM64=3953d231da3783e2bf8904b6dd72767c5c6e533e163d3742fd0437affa431bd3
+RUN case "${TARGETARCH}" in \
+      amd64) A=x86_64; H="${OOKLA_SHA256_AMD64}" ;; \
+      arm64) A=aarch64; H="${OOKLA_SHA256_ARM64}" ;; \
+      *) echo "unsupported arch ${TARGETARCH}"; exit 1 ;; \
+    esac \
+ && python -c "import hashlib,sys,tarfile,urllib.request as u; \
+v='${OOKLA_VERSION}'; d=u.urlopen(f'https://install.speedtest.net/app/cli/ookla-speedtest-{v}-linux-$A.tgz').read(); \
+sys.exit('checksum mismatch') if hashlib.sha256(d).hexdigest()!='$H' else None; \
 open('o.tgz','wb').write(d); tarfile.open('o.tgz').extract('speedtest','/build')" \
  && chmod 0755 /build/speedtest
 
